@@ -1,4 +1,5 @@
 const Waline = require('@waline/vercel');
+const serverless = require('serverless-http'); // <-- FIX: Adaptor untuk Lambda
 
 // Ambil variabel lingkungan dari Netlify
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -7,29 +8,26 @@ const WALINE_SERVER_URL = process.env.WALINE_SERVER_URL;
 
 
 // --- VALIDASI WAJIB ---
-// Ini akan membuat proses deploy gagal jika Env Vars penting tidak ada.
 if (!MONGODB_URI) {
   throw new Error('MONGODB_URI environment variable is required');
 }
-
 if (!MASTER_KEY) {
   throw new Error('MASTER_KEY environment variable is required');
 }
-
 if (!WALINE_SERVER_URL) {
   throw new Error('WALINE_SERVER_URL environment variable is required');
 }
 // --- AKHIR VALIDASI ---
 
 
-// FIX: Menetapkan Waline() ke 'handler' agar dikenali oleh AWS Lambda/Netlify
-module.exports.handler = Waline({
+// 1. Inisialisasi Aplikasi Waline (Ini mengembalikan aplikasi Koa)
+const walineApp = Waline({
   // Database Configuration
-  storage: 'mongodb', // Memaksa Waline menggunakan driver MongoDB
-  mongodbUrl: MONGODB_URI, // URL koneksi ke MongoDB Docker Anda
+  storage: 'mongodb',
+  mongodbUrl: MONGODB_URI, 
   
   // Security & Authentication
-  masterKey: MASTER_KEY, // Kunci rahasia untuk otorisasi admin
+  masterKey: MASTER_KEY, 
   
   // Site info & CORS
   serverURL: WALINE_SERVER_URL,
@@ -38,8 +36,6 @@ module.exports.handler = Waline({
   // Fitur
   login: 'enable',
   upload: false, 
-
-  // Env
   env: 'netlify',
   
   // Hooks (optional)
@@ -47,3 +43,7 @@ module.exports.handler = Waline({
     console.log('New comment saved:', comment);
   },
 });
+
+// 2. FIX KRITIS: Bungkus aplikasi Koa dengan serverless-http 
+// dan tetapkan hasilnya ke module.exports.handler
+module.exports.handler = serverless(walineApp);
