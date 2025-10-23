@@ -1,52 +1,54 @@
 const Waline = require('@waline/vercel');
 
-// Environment variables dari Netlify
+// Environment variables dari Netlify (Menggunakan nama yang Anda inginkan)
 const MONGODB_URI = process.env.MONGODB_URI;
-const JWT_TOKEN = process.env.JWT_TOKEN;
-const SITE_NAME = process.env.SITE_NAME || 'My Blog';
-const SITE_URL = process.env.SITE_URL || 'https://your-site.netlify.app';
+// Menggunakan MASTER_KEY sebagai kunci rahasia utama Waline
+const MASTER_KEY = process.env.MASTER_KEY; 
+// Menggunakan WALINE_SERVER_URL sebagai URL domain Anda
+const WALINE_SERVER_URL = process.env.WALINE_SERVER_URL; 
 
-// Validate required env vars
+
+// --- VALIDASI WAJIB ---
+// Ini akan membuat proses deploy gagal jika Env Vars penting tidak ada.
 if (!MONGODB_URI) {
   throw new Error('MONGODB_URI environment variable is required');
 }
 
-if (!JWT_TOKEN) {
-  throw new Error('JWT_TOKEN environment variable is required');
+if (!MASTER_KEY) {
+  throw new Error('MASTER_KEY environment variable is required');
 }
+
+if (!WALINE_SERVER_URL) {
+  throw new Error('WALINE_SERVER_URL environment variable is required');
+}
+// --- AKHIR VALIDASI ---
+
 
 // Export Waline handler untuk Netlify Functions
 module.exports = Waline({
   // Database Configuration
   storage: 'mongodb',
-  mongodbUrl: MONGODB_URI, // ← Gunakan mongodbUrl bukan dbUrl
+  // FIX KRITIS: Menggunakan mongodbUrl untuk koneksi MongoDB
+  mongodbUrl: MONGODB_URI, 
   
-  // Security
-  secureDomains: [SITE_URL], // Allow CORS dari domain ini
-  forbiddenWords: [], // Kata-kata terlarang (optional)
+  // Security & Authentication
+  // Waline menggunakan masterKey untuk menandatangani JWT dan otorisasi admin
+  masterKey: MASTER_KEY, 
   
-  // JWT untuk authentication
-  jwtToken: JWT_TOKEN,
+  // Site info & CORS
+  // Waline menggunakan serverURL dan secureDomains
+  serverURL: WALINE_SERVER_URL,
+  secureDomains: [WALINE_SERVER_URL], 
   
-  // Site info
-  serverURL: SITE_URL,
-  
-  // Features
-  upload: false, // Disable file upload (Netlify limitation)
-  login: 'enable', // Enable login
+  // Fitur
+  login: 'enable',
+  upload: false, 
+
+  // Env
+  env: 'netlify',
   
   // Hooks (optional)
   async postSave(comment) {
     console.log('New comment saved:', comment);
-    // Bisa tambahkan webhook ke Laravel di sini
-    // await notifyLaravel(comment);
-  },
-  
-  async postUpdate(comment) {
-    console.log('Comment updated:', comment);
-  },
-  
-  async postDelete(comment) {
-    console.log('Comment deleted:', comment);
   },
 });
