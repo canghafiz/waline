@@ -5,6 +5,8 @@ const serverless = require('serverless-http'); // <-- FIX: Adaptor untuk Lambda
 const MONGODB_URI = process.env.MONGODB_URI;
 const MASTER_KEY = process.env.MASTER_KEY; 
 const WALINE_SERVER_URL = process.env.WALINE_SERVER_URL; 
+// VARIABEL BARU: Domain tempat Waline di-embed (Situs Blog/Klien Anda)
+const WALINE_CLIENT_URL = process.env.WALINE_CLIENT_URL; 
 
 
 // --- VALIDASI WAJIB ---
@@ -16,6 +18,9 @@ if (!MASTER_KEY) {
 }
 if (!WALINE_SERVER_URL) {
   throw new Error('WALINE_SERVER_URL environment variable is required');
+}
+if (!WALINE_CLIENT_URL) {
+  throw new Error('WALINE_CLIENT_URL environment variable is required for client CORS');
 }
 // --- AKHIR VALIDASI ---
 
@@ -31,7 +36,8 @@ const walineApp = Waline({
   
   // Site info & CORS
   serverURL: WALINE_SERVER_URL,
-  secureDomains: [WALINE_SERVER_URL], 
+  // FIX: Daftarkan kedua domain (Server dan Client) untuk mengatasi ForbiddenError
+  secureDomains: [WALINE_SERVER_URL, WALINE_CLIENT_URL], 
   
   // Fitur
   login: 'enable',
