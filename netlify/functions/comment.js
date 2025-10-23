@@ -1,10 +1,8 @@
 const Waline = require('@waline/vercel');
 
-// Environment variables dari Netlify (Menggunakan nama yang Anda inginkan)
+// Ambil variabel lingkungan dari Netlify
 const MONGODB_URI = process.env.MONGODB_URI;
-// Menggunakan MASTER_KEY sebagai kunci rahasia utama Waline
 const MASTER_KEY = process.env.MASTER_KEY; 
-// Menggunakan WALINE_SERVER_URL sebagai URL domain Anda
 const WALINE_SERVER_URL = process.env.WALINE_SERVER_URL; 
 
 
@@ -24,19 +22,16 @@ if (!WALINE_SERVER_URL) {
 // --- AKHIR VALIDASI ---
 
 
-// Export Waline handler untuk Netlify Functions
-module.exports = Waline({
+// FIX: Menetapkan Waline() ke 'handler' agar dikenali oleh AWS Lambda/Netlify
+module.exports.handler = Waline({
   // Database Configuration
-  storage: 'mongodb',
-  // FIX KRITIS: Menggunakan mongodbUrl untuk koneksi MongoDB
-  mongodbUrl: MONGODB_URI, 
+  storage: 'mongodb', // Memaksa Waline menggunakan driver MongoDB
+  mongodbUrl: MONGODB_URI, // URL koneksi ke MongoDB Docker Anda
   
   // Security & Authentication
-  // Waline menggunakan masterKey untuk menandatangani JWT dan otorisasi admin
-  masterKey: MASTER_KEY, 
+  masterKey: MASTER_KEY, // Kunci rahasia untuk otorisasi admin
   
   // Site info & CORS
-  // Waline menggunakan serverURL dan secureDomains
   serverURL: WALINE_SERVER_URL,
   secureDomains: [WALINE_SERVER_URL], 
   
